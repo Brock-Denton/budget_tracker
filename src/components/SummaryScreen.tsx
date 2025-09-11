@@ -190,8 +190,10 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
             adjustedBudget = category.budget;
         }
         
-        remaining = adjustedBudget - spent;
-        percentage = Math.max(0, (remaining / adjustedBudget) * 100);
+        if (adjustedBudget !== null && adjustedBudget !== undefined) {
+          remaining = adjustedBudget - spent;
+          percentage = Math.max(0, (remaining / adjustedBudget) * 100);
+        }
       }
 
       return {

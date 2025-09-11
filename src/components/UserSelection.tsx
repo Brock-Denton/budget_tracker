@@ -76,20 +76,37 @@ const UserSelection: React.FC = () => {
       const existingColors = categories.map(cat => cat.color);
       const colors = [
         '#F59E0B', '#8B5CF6', '#6B7280', '#EC4899', '#06B6D4', 
-        '#84CC16', '#F97316', '#EF4444', '#10B981', '#3B82F6'
+        '#84CC16', '#F97316', '#EF4444', '#10B981', '#3B82F6',
+        '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+        '#DDA0DD', '#98D8C8', '#FFB347', '#87CEEB', '#D8BFD8',
+        '#F0E68C', '#FFA07A', '#20B2AA', '#FF69B4', '#9370DB'
       ];
       
       // Find a color that's not already used
       let selectedColor = colors[Math.floor(Math.random() * colors.length)];
       let attempts = 0;
-      while (existingColors.includes(selectedColor) && attempts < 20) {
+      while (existingColors.includes(selectedColor) && attempts < 50) {
         selectedColor = colors[Math.floor(Math.random() * colors.length)];
         attempts++;
       }
       
-      // If we still have a conflict, use a fallback color
+      // If we still have a conflict, generate a unique color
       if (existingColors.includes(selectedColor)) {
-        selectedColor = '#6366f1'; // Fallback color
+        // Generate a random HSL color
+        const hue = Math.floor(Math.random() * 360);
+        const saturation = 70 + Math.floor(Math.random() * 30); // 70-100%
+        const lightness = 50 + Math.floor(Math.random() * 20); // 50-70%
+        selectedColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+        
+        // If this generated color is still a conflict, try again with different values
+        let retryAttempts = 0;
+        while (existingColors.includes(selectedColor) && retryAttempts < 10) {
+          const newHue = Math.floor(Math.random() * 360);
+          const newSaturation = 70 + Math.floor(Math.random() * 30);
+          const newLightness = 50 + Math.floor(Math.random() * 20);
+          selectedColor = `hsl(${newHue}, ${newSaturation}%, ${newLightness}%)`;
+          retryAttempts++;
+        }
       }
       
       const { data, error } = await supabase
