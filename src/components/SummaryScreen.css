@@ -124,6 +124,16 @@
   color: #ef4444;
 }
 
+.total-value.budgeted {
+  color: #f59e0b;
+}
+
+.divider {
+  height: 1px;
+  background-color: #444;
+  margin: 0.5rem 0;
+}
+
 .categories-section h3 {
   font-size: 1.2rem;
   font-weight: bold;

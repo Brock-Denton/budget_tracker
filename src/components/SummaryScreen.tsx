@@ -292,6 +292,25 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
 
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
   
+  // Calculate total budgeted amount based on period
+  let totalBudgeted = 0;
+  switch (period) {
+    case 'day':
+      totalBudgeted = categories.reduce((sum, cat) => sum + ((cat.budget || 0) / 30), 0); // Monthly / 30 days
+      break;
+    case 'week':
+      totalBudgeted = categories.reduce((sum, cat) => sum + ((cat.budget || 0) / 4), 0); // Monthly / 4 weeks
+      break;
+    case 'month':
+      totalBudgeted = categories.reduce((sum, cat) => sum + (cat.budget || 0), 0); // Direct monthly
+      break;
+    case 'year':
+      totalBudgeted = categories.reduce((sum, cat) => sum + ((cat.budget || 0) * 12), 0); // Monthly * 12
+      break;
+    default:
+      totalBudgeted = categories.reduce((sum, cat) => sum + (cat.budget || 0), 0);
+  }
+  
   // Calculate income based on period (income is stored as monthly amounts)
   let totalIncome = 0;
   switch (period) {
@@ -312,6 +331,7 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
   }
   
   const netIncome = totalIncome - totalExpenses;
+  const anticipatedNet = totalIncome - totalBudgeted;
 
   if (loading) {
     return <div className="loading">Loading summary...</div>;
@@ -351,8 +371,19 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
           <span className="total-value expense">${totalExpenses.toFixed(2)}</span>
         </div>
         <div className="total-item">
+          <span className="total-label">Budgeted Expenses</span>
+          <span className="total-value budgeted">${totalBudgeted.toFixed(2)}</span>
+        </div>
+        <div className="divider"></div>
+        <div className="total-item">
           <span className="total-label">Income</span>
           <span className="total-value income">${totalIncome.toFixed(2)}</span>
+        </div>
+        <div className="total-item">
+          <span className="total-label">Anticipated Net</span>
+          <span className={`total-value ${anticipatedNet >= 0 ? 'positive' : 'negative'}`}>
+            ${anticipatedNet.toFixed(2)}
+          </span>
         </div>
         <div className="total-item">
           <span className="total-label">Net</span>
