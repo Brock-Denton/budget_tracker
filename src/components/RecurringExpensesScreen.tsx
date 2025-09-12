@@ -65,7 +65,15 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ userI
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const categoryName = selectedCategoryName === "__new__" ? newCategoryName : selectedCategoryName;
+    let categoryName: string;
+    if (editingExpense) {
+      // When editing, use the existing category name
+      const expense = recurringExpenses.find(e => e.id === editingExpense);
+      categoryName = expense ? getCategoryName(expense.category_id) : '';
+    } else {
+      // When creating new, use the selected category name
+      categoryName = selectedCategoryName === "__new__" ? newCategoryName : selectedCategoryName;
+    }
     
     if (!categoryName.trim() || !amount || !dayOfMonth) {
       alert('Please fill in all required fields.');
@@ -205,7 +213,9 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ userI
 
   const handleEdit = (expense: RecurringExpense) => {
     setEditingExpense(expense.id);
-    setNewCategoryName(getCategoryName(expense.category_id));
+    const categoryName = getCategoryName(expense.category_id);
+    setSelectedCategoryName(categoryName);
+    setNewCategoryName(categoryName);
     setAmount(expense.amount.toString());
     setNote(expense.note || '');
     setDayOfMonth(expense.day_of_month.toString());
@@ -328,7 +338,7 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ userI
                 )}
               </div>
               {editingExpense && (
-                <small>Category cannot be changed when editing</small>
+                <small>Category: {getCategoryName(recurringExpenses.find(e => e.id === editingExpense)?.category_id || '')}</small>
               )}
             </div>
 

@@ -27,7 +27,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ activeTab, onTabCha
             console.log('🟢 onTabChange called');
           }}
         >
-          <Icon size={24} />
+          <Icon size={28} />
           <span className="nav-label">{label}</span>
         </button>
       ))}

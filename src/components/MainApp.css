@@ -22,7 +22,7 @@
   flex: 1;
   padding: 1rem;
   overflow-y: auto;
-  padding-bottom: 120px; /* Extra space for bottom navigation on mobile */
+  padding-bottom: 140px; /* Extra space for larger bottom navigation */
 }
 
 .loading, .error {
@@ -49,7 +49,7 @@
   
   .app-content {
     padding: 0.75rem;
-    padding-bottom: 140px; /* Extra space for mobile bottom navigation */
+    padding-bottom: 160px; /* Extra space for larger mobile bottom navigation */
   }
 }
 
