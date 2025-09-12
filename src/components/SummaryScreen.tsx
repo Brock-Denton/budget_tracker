@@ -389,7 +389,7 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
         </div>
         <div className="total-item">
           <span className="total-label">Anticipated Net</span>
-          <span className={`total-value ${anticipatedNet >= 0 ? 'positive' : 'negative'}`}>
+          <span className="total-value budgeted">
             ${anticipatedNet.toFixed(2)}
           </span>
         </div>
