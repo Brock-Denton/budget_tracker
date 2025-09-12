@@ -20,6 +20,7 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ userI
   
   // Form states
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [selectedCategoryName, setSelectedCategoryName] = useState('');
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [dayOfMonth, setDayOfMonth] = useState('');
@@ -64,7 +65,9 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ userI
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newCategoryName.trim() || !amount || !dayOfMonth) {
+    const categoryName = selectedCategoryName === "__new__" ? newCategoryName : selectedCategoryName;
+    
+    if (!categoryName.trim() || !amount || !dayOfMonth) {
       alert('Please fill in all required fields.');
       return;
     }
@@ -85,42 +88,49 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ userI
         const expense = recurringExpenses.find(e => e.id === editingExpense);
         categoryId = expense?.category_id || '';
       } else {
-        // Create new recurring category
-        const colors = [
-          '#F59E0B', '#8B5CF6', '#6B7280', '#EC4899', '#06B6D4', 
-          '#84CC16', '#F97316', '#EF4444', '#10B981', '#3B82F6',
-          '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-          '#DDA0DD', '#98D8C8', '#FFB347', '#87CEEB', '#D8BFD8',
-          '#F0E68C', '#FFA07A', '#20B2AA', '#FF69B4', '#9370DB'
-        ];
+        // Check if category already exists (by name)
+        const existingCategory = categories.find(cat => cat.name.toLowerCase() === categoryName.toLowerCase());
         
-        const existingColors = categories.map(cat => cat.color);
-        let selectedColor = colors[Math.floor(Math.random() * colors.length)];
-        let attempts = 0;
-        while (existingColors.includes(selectedColor) && attempts < 50) {
-          selectedColor = colors[Math.floor(Math.random() * colors.length)];
-          attempts++;
-        }
-        
-        if (existingColors.includes(selectedColor)) {
-          const hue = Math.floor(Math.random() * 360);
-          const saturation = 70 + Math.floor(Math.random() * 30);
-          const lightness = 50 + Math.floor(Math.random() * 20);
-          selectedColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-        }
+        if (existingCategory) {
+          categoryId = existingCategory.id;
+        } else {
+          // Create new recurring category
+          const colors = [
+            '#F59E0B', '#8B5CF6', '#6B7280', '#EC4899', '#06B6D4', 
+            '#84CC16', '#F97316', '#EF4444', '#10B981', '#3B82F6',
+            '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+            '#DDA0DD', '#98D8C8', '#FFB347', '#87CEEB', '#D8BFD8',
+            '#F0E68C', '#FFA07A', '#20B2AA', '#FF69B4', '#9370DB'
+          ];
+          
+          const existingColors = categories.map(cat => cat.color);
+          let selectedColor = colors[Math.floor(Math.random() * colors.length)];
+          let attempts = 0;
+          while (existingColors.includes(selectedColor) && attempts < 50) {
+            selectedColor = colors[Math.floor(Math.random() * colors.length)];
+            attempts++;
+          }
+          
+          if (existingColors.includes(selectedColor)) {
+            const hue = Math.floor(Math.random() * 360);
+            const saturation = 70 + Math.floor(Math.random() * 30);
+            const lightness = 50 + Math.floor(Math.random() * 20);
+            selectedColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+          }
 
-        const { data: categoryData, error: categoryError } = await supabase
-          .from('categories')
-          .insert([{ 
-            name: newCategoryName.trim(), 
-            color: selectedColor,
-            is_recurring_only: true
-          }])
-          .select()
-          .single();
+          const { data: categoryData, error: categoryError } = await supabase
+            .from('categories')
+            .insert([{ 
+              name: categoryName.trim(), 
+              color: selectedColor,
+              is_recurring_only: true
+            }])
+            .select()
+            .single();
 
-        if (categoryError) throw categoryError;
-        categoryId = categoryData.id;
+          if (categoryError) throw categoryError;
+          categoryId = categoryData.id;
+        }
       }
 
       if (editingExpense) {
@@ -162,6 +172,7 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ userI
 
       // Reset form
       setNewCategoryName('');
+      setSelectedCategoryName('');
       setAmount('');
       setNote('');
       setDayOfMonth('');
@@ -229,6 +240,7 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ userI
     setShowAddForm(false);
     setEditingExpense(null);
     setNewCategoryName('');
+    setSelectedCategoryName('');
     setAmount('');
     setNote('');
     setDayOfMonth('');
@@ -289,17 +301,34 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ userI
           <h3>{editingExpense ? 'Edit Recurring Expense' : 'Add Recurring Expense'}</h3>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Category Name *</label>
-              <input
-                type="text"
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                placeholder="e.g., Phone Bill, Netflix, Gym Membership"
-                required
-                disabled={!!editingExpense}
-              />
+              <label>Category *</label>
+              <div className="category-selection">
+                <select
+                  value={selectedCategoryName}
+                  onChange={(e) => setSelectedCategoryName(e.target.value)}
+                  required
+                  disabled={!!editingExpense}
+                >
+                  <option value="">Select or create category...</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.name}>
+                      {cat.name} (existing)
+                    </option>
+                  ))}
+                  <option value="__new__">+ Create new category</option>
+                </select>
+                {selectedCategoryName === "__new__" && (
+                  <input
+                    type="text"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="Enter new category name"
+                    required
+                  />
+                )}
+              </div>
               {editingExpense && (
-                <small>Category name cannot be changed when editing</small>
+                <small>Category cannot be changed when editing</small>
               )}
             </div>
 
@@ -357,51 +386,81 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ userI
             <p>Add one to automatically create expenses each month!</p>
           </div>
         ) : (
-          <div className="expenses-grid">
-            {recurringExpenses.map((expense) => (
-              <div key={expense.id} className="expense-card">
-                <div className="expense-header">
-                  <div 
-                    className="category-indicator"
-                    style={{ backgroundColor: getCategoryColor(expense.category_id) }}
-                  >
-                    {getCategoryName(expense.category_id)}
-                  </div>
-                  <div className="expense-actions">
-                    <button 
-                      className="edit-btn"
-                      onClick={() => handleEdit(expense)}
-                    >
-                      <Edit3 size={16} />
-                    </button>
-                    <button 
-                      className="delete-btn"
-                      onClick={() => handleDelete(expense.id)}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
+          <div className="categories-container">
+            {(() => {
+              // Group recurring expenses by category name
+              const groupedExpenses = recurringExpenses.reduce((acc, expense) => {
+                const categoryName = getCategoryName(expense.category_id);
+                if (!acc[categoryName]) {
+                  acc[categoryName] = [];
+                }
+                acc[categoryName].push(expense);
+                return acc;
+              }, {} as Record<string, RecurringExpense[]>);
+
+              return Object.entries(groupedExpenses).map(([categoryName, categoryExpenses]) => {
+                const totalAmount = categoryExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+                const firstExpense = categoryExpenses[0];
+                const categoryColor = getCategoryColor(firstExpense.category_id);
                 
-                <div className="expense-details">
-                  <div className="amount">${expense.amount.toFixed(2)}</div>
-                  <div className="day-info">
-                    <Calendar size={16} />
-                    <span>Day {expense.day_of_month}</span>
+                return (
+                  <div key={categoryName} className="category-group">
+                    <div className="category-header">
+                      <div 
+                        className="category-indicator"
+                        style={{ backgroundColor: categoryColor }}
+                      >
+                        {categoryName}
+                      </div>
+                      <div className="category-total">
+                        Total: ${totalAmount.toFixed(2)}/month
+                      </div>
+                    </div>
+                    
+                    <div className="expenses-grid">
+                      {categoryExpenses.map((expense) => (
+                        <div key={expense.id} className="expense-card">
+                          <div className="expense-header">
+                            <div className="expense-amount">${expense.amount.toFixed(2)}</div>
+                            <div className="expense-actions">
+                              <button 
+                                className="edit-btn"
+                                onClick={() => handleEdit(expense)}
+                              >
+                                <Edit3 size={16} />
+                              </button>
+                              <button 
+                                className="delete-btn"
+                                onClick={() => handleDelete(expense.id)}
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <div className="expense-details">
+                            <div className="day-info">
+                              <Calendar size={16} />
+                              <span>Day {expense.day_of_month}</span>
+                            </div>
+                            <div className="user-info">
+                              <div 
+                                className="user-color-indicator"
+                                style={{ backgroundColor: (expense as any).users?.color || '#6B7280' }}
+                              />
+                              <span className="user-name">{(expense as any).users?.name || 'Unknown User'}</span>
+                            </div>
+                            {expense.note && (
+                              <div className="note">{expense.note}</div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="user-info">
-                    <div 
-                      className="user-color-indicator"
-                      style={{ backgroundColor: (expense as any).users?.color || '#6B7280' }}
-                    />
-                    <span className="user-name">{(expense as any).users?.name || 'Unknown User'}</span>
-                  </div>
-                  {expense.note && (
-                    <div className="note">{expense.note}</div>
-                  )}
-                </div>
-              </div>
-            ))}
+                );
+              });
+            })()}
           </div>
         )}
       </div>

@@ -108,6 +108,16 @@
   font-size: 0.875rem;
 }
 
+.category-selection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.category-selection input {
+  margin-top: 8px;
+}
+
 .form-actions {
   display: flex;
   gap: 1rem;
@@ -164,9 +174,37 @@
   font-size: 1rem;
 }
 
+.categories-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.category-group {
+  background: #1a1a1a;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #333;
+}
+
+.category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #333;
+}
+
+.category-total {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #3B82F6;
+}
+
 .expenses-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1rem;
 }
 
@@ -187,6 +225,12 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+}
+
+.expense-amount {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #EF4444;
 }
 
 .category-indicator {
