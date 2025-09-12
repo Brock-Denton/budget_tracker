@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Budget Icon Generator</title>
+</head>
+<body>
+    <canvas id="canvas" width="180" height="180" style="border: 1px solid #ccc;"></canvas>
+    <br><br>
+    <button onclick="downloadIcon()">Download Icon</button>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Background circle
+        ctx.fillStyle = '#1F2937';
+        ctx.beginPath();
+        ctx.arc(90, 90, 85, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Border
+        ctx.strokeStyle = '#3B82F6';
+        ctx.lineWidth = 8;
+        ctx.stroke();
+        
+        // Dollar sign
+        ctx.fillStyle = '#10B981';
+        ctx.font = 'bold 80px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('$', 90, 90);
+        
+        // Small coins
+        const coins = [
+            {x: 50, y: 50},
+            {x: 130, y: 50},
+            {x: 50, y: 130},
+            {x: 130, y: 130}
+        ];
+        
+        coins.forEach(coin => {
+            // Coin circle
+            ctx.fillStyle = '#F59E0B';
+            ctx.beginPath();
+            ctx.arc(coin.x, coin.y, 12, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Dollar sign on coin
+            ctx.fillStyle = '#1F2937';
+            ctx.font = 'bold 12px Arial';
+            ctx.fillText('$', coin.x, coin.y + 4);
+        });
+        
+        function downloadIcon() {
+            const link = document.createElement('a');
+            link.download = 'budget-icon-180.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+    </script>
+</body>
+</html>
