@@ -29,3 +29,4 @@ UPDATE categories SET color = '#9370DB' WHERE name = 'Clothes';           -- Med
 -- Car Insurance: #10B981 (emerald) - keep
 -- Food: #8B5CF6 (purple) - keep
 -- Gas (original): #F59E0B (amber) - keep
+

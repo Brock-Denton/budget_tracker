@@ -20,7 +20,12 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ activeTab, onTabCha
         <button
           key={id}
           className={`nav-button ${activeTab === id ? 'active' : ''}`}
-          onClick={() => onTabChange(id)}
+          onClick={() => {
+            console.log('🟢 BottomNavigation clicked:', id);
+            console.log('🟢 Calling onTabChange with:', id);
+            onTabChange(id);
+            console.log('🟢 onTabChange called');
+          }}
         >
           <Icon size={24} />
           <span className="nav-label">{label}</span>

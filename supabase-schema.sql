@@ -61,3 +61,4 @@ CREATE POLICY "Allow all operations on users" ON users FOR ALL USING (true);
 CREATE POLICY "Allow all operations on categories" ON categories FOR ALL USING (true);
 CREATE POLICY "Allow all operations on expenses" ON expenses FOR ALL USING (true);
 CREATE POLICY "Allow all operations on income" ON income FOR ALL USING (true);
+

@@ -300,3 +300,32 @@
     padding: 1rem 1rem 6rem 1rem;
   }
 }
+
+.recurring-expenses-section {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+}
+
+.recurring-expenses-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #2a2a2a;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.recurring-expenses-btn:hover {
+  background: #3a3a3a;
+  border-color: #555;
+}
+
+.recurring-expenses-btn:active {
+  transform: translateY(1px);
+}

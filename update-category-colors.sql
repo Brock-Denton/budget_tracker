@@ -6,3 +6,4 @@ UPDATE categories SET color = '#96CEB4' WHERE name = 'Dining';      -- Mint gree
 UPDATE categories SET color = '#FFEAA7' WHERE name = 'School';      -- Yellow
 UPDATE categories SET color = '#DDA0DD' WHERE name = 'TV';          -- Plum
 UPDATE categories SET color = '#98D8C8' WHERE name = 'Tech';        -- Seafoam green
+

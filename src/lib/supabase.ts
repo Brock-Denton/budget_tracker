@@ -17,6 +17,7 @@ export interface Category {
   name: string
   color: string
   budget?: number | null
+  is_recurring_only?: boolean
 }
 
 export interface Expense {
@@ -34,4 +35,17 @@ export interface Income {
   amount: number
   note?: string
   created_at: string
+}
+
+export interface RecurringExpense {
+  id: string
+  user_id: string
+  category_id: string
+  amount: number
+  note?: string
+  day_of_month: number
+  is_active: boolean
+  last_generated_date: string | null
+  created_at: string
+  updated_at: string
 }

@@ -5,6 +5,7 @@ import CategoriesScreen from './CategoriesScreen';
 import AddAmountScreen from './AddAmountScreen';
 import SummaryScreen from './SummaryScreen';
 import IncomeScreen from './IncomeScreen';
+import RecurringExpensesScreen from './RecurringExpensesScreen';
 import BottomNavigation from './BottomNavigation';
 import './MainApp.css';
 
@@ -19,13 +20,16 @@ const MainApp: React.FC = () => {
   useEffect(() => {
     if (userId) {
       fetchUser(userId);
+      generateRecurringExpenses(); // Generate recurring expenses when app loads
     }
   }, [userId]);
 
   useEffect(() => {
     // Handle URL parameters for tab and category selection
     const tab = searchParams.get('tab');
-    if (tab && ['home', 'summary', 'income'].includes(tab)) {
+    if (tab === 'recurring') {
+      setActiveTab('home'); // Recurring expenses is part of the home section
+    } else if (tab && ['home', 'summary', 'income'].includes(tab)) {
       setActiveTab(tab as 'home' | 'summary' | 'income');
     }
   }, [searchParams]);
@@ -47,12 +51,30 @@ const MainApp: React.FC = () => {
     }
   };
 
+  const generateRecurringExpenses = async () => {
+    try {
+      // Call the Supabase function to generate recurring expenses
+      const { error } = await supabase.rpc('generate_recurring_expenses');
+      if (error) {
+        console.error('Error generating recurring expenses:', error);
+      }
+    } catch (error) {
+      console.error('Error calling generate_recurring_expenses function:', error);
+    }
+  };
+
   const handleTabChange = (tab: 'home' | 'summary' | 'income') => {
+    console.log('🔵 MainApp handleTabChange called with:', tab);
     if (tab === 'home') {
       // Reset to user selection screen
+      console.log('🔵 MainApp navigating to home (/)');
       navigate('/');
     } else {
+      console.log('🔵 MainApp setting activeTab to:', tab);
       setActiveTab(tab);
+      // Update URL to remove tab=recurring and set the new tab
+      console.log('🔵 MainApp updating URL to:', `/app/${userId}?tab=${tab}`);
+      navigate(`/app/${userId}?tab=${tab}`);
     }
   };
 
@@ -79,6 +101,11 @@ const MainApp: React.FC = () => {
     // If we have a category and tab=expense, show the expense form
     if (categoryId && tab === 'expense') {
       return <AddAmountScreen userId={userId!} currentUser={currentUser} />;
+    }
+    
+    // If tab=recurring, show recurring expenses screen
+    if (tab === 'recurring') {
+      return <RecurringExpensesScreen userId={userId!} currentUser={currentUser} />;
     }
     
     // Otherwise show the selected tab

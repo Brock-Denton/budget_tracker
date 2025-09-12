@@ -46,7 +46,10 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
       const startDate = getStartDate(period, currentMonth);
       const endDate = getEndDate(period, currentMonth);
       
-      // Fetch categories
+      console.log('SummaryScreen fetchData - period:', period, 'currentMonth:', currentMonth);
+      console.log('SummaryScreen fetchData - startDate:', startDate.toISOString(), 'endDate:', endDate.toISOString());
+      
+      // Fetch categories (including recurring-only categories)
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select('*')
@@ -70,6 +73,9 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
         .lte('created_at', endDate.toISOString());
 
       if (expensesError) throw expensesError;
+      
+      console.log('SummaryScreen fetchData - expenses found:', expensesData?.length || 0);
+      console.log('SummaryScreen fetchData - expenses:', expensesData);
 
       // Fetch income (from all users) - filter by date range
       const { data: incomeData, error: incomeError } = await supabase

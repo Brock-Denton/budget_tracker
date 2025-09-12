@@ -36,6 +36,7 @@ const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ userId, currentUser
       const { data, error } = await supabase
         .from('categories')
         .select('*')
+        .eq('is_recurring_only', false)
         .order('name');
 
       if (error) throw error;

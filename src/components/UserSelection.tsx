@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Repeat } from 'lucide-react';
 import { supabase, User, Category } from '../lib/supabase';
 import BottomNavigation from './BottomNavigation';
 import './UserSelection.css';
@@ -24,7 +24,7 @@ const UserSelection: React.FC = () => {
     try {
       const [usersResult, categoriesResult] = await Promise.all([
         supabase.from('users').select('*').order('name'),
-        supabase.from('categories').select('*').order('name')
+        supabase.from('categories').select('*').eq('is_recurring_only', false).order('name')
       ]);
 
       if (usersResult.error) throw usersResult.error;
@@ -264,6 +264,16 @@ const UserSelection: React.FC = () => {
             )}
           </div>
         ))}
+      </div>
+      
+      <div className="recurring-expenses-section">
+        <button 
+          className="recurring-expenses-btn"
+          onClick={() => navigate(`/app/${selectedUser.id}?tab=recurring`)}
+        >
+          <Repeat size={20} />
+          Recurring Expenses
+        </button>
       </div>
       
       <BottomNavigation activeTab="home" onTabChange={handleTabChange} />
