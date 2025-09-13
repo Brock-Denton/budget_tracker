@@ -230,6 +230,33 @@ const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ userId, currentUser }
     fetchAnalyticsData();
   }, [fetchAnalyticsData]);
 
+  // Auto-scroll to current month on mobile
+  useEffect(() => {
+    if (analyticsData?.monthlyData) {
+      const currentMonth = new Date().getMonth();
+      const currentMonthIndex = analyticsData.monthlyData.findIndex(
+        month => month.monthNumber === currentMonth
+      );
+      
+      if (currentMonthIndex !== -1) {
+        // Small delay to ensure DOM is rendered
+        setTimeout(() => {
+          const chartContainer = document.querySelector('.monthly-chart');
+          if (chartContainer) {
+            const monthBar = chartContainer.children[currentMonthIndex] as HTMLElement;
+            if (monthBar) {
+              monthBar.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'nearest', 
+                inline: 'center' 
+              });
+            }
+          }
+        }, 100);
+      }
+    }
+  }, [analyticsData]);
+
   const handleTabChange = (tab: 'home' | 'summary' | 'income' | 'analytics') => {
     console.log('🔵 AnalyticsScreen handleTabChange called with:', tab);
     if (tab === 'home') {
