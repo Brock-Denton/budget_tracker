@@ -152,8 +152,8 @@
   display: flex;
   gap: 24px;
   justify-content: space-between;
-  align-items: end;
-  height: 250px;
+  align-items: center;
+  height: 300px;
   overflow-x: auto;
   padding: 1.5rem 0;
   min-width: 100%;
@@ -481,9 +481,9 @@
   }
   
   .monthly-chart {
-    height: 200px;
+    height: 250px;
     flex-direction: row;
-    align-items: end;
+    align-items: center;
     justify-content: flex-start;
     overflow-x: auto;
     padding: 1rem 0 2rem 0;
