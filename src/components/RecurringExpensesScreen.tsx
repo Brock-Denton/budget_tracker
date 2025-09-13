@@ -266,7 +266,7 @@ const RecurringExpensesScreen: React.FC<RecurringExpensesScreenProps> = ({ userI
     return category?.color || '#6B7280';
   };
 
-  const handleTabChange = (tab: 'home' | 'summary' | 'income') => {
+  const handleTabChange = (tab: 'home' | 'summary' | 'income' | 'analytics') => {
     console.log('🔴 RecurringExpensesScreen handleTabChange called with:', tab);
     console.log('🔴 Current userId:', userId);
     console.log('🔴 Function is executing!');

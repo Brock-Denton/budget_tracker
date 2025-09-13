@@ -37,6 +37,18 @@ export interface Income {
   created_at: string
 }
 
+export interface RecurringIncome {
+  id: string
+  user_id: string
+  amount: number
+  note?: string
+  frequency: 'bi-weekly' | 'monthly' | 'yearly'
+  day_of_month?: number
+  last_generated_date?: string
+  created_at: string
+  updated_at: string
+}
+
 export interface RecurringExpense {
   id: string
   user_id: string

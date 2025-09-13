@@ -287,7 +287,7 @@ const LargeExpensesScreen: React.FC<LargeExpensesScreenProps> = ({ userId, curre
     return category?.color || '#6B7280';
   };
 
-  const handleTabChange = (tab: 'home' | 'summary' | 'income') => {
+  const handleTabChange = (tab: 'home' | 'summary' | 'income' | 'analytics') => {
     console.log('🔵 LargeExpensesScreen handleTabChange called with:', tab);
     if (tab === 'home') {
       console.log('🔵 LargeExpensesScreen navigating to home (/)');

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Edit3, Trash2 } from 'lucide-react';
-import { supabase, Income, User } from '../lib/supabase';
+import { supabase, Income, User, RecurringIncome } from '../lib/supabase';
 import './IncomeScreen.css';
 
 interface IncomeScreenProps {

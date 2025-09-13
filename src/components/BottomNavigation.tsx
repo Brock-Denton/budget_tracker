@@ -1,17 +1,17 @@
 import React from 'react';
-import { Home, BarChart3, DollarSign } from 'lucide-react';
+import { Home, BarChart3, TrendingUp } from 'lucide-react';
 import './BottomNavigation.css';
 
 interface BottomNavigationProps {
-  activeTab: 'home' | 'summary' | 'income';
-  onTabChange: (tab: 'home' | 'summary' | 'income') => void;
+  activeTab: 'home' | 'summary' | 'income' | 'analytics';
+  onTabChange: (tab: 'home' | 'summary' | 'income' | 'analytics') => void;
 }
 
 const BottomNavigation: React.FC<BottomNavigationProps> = ({ activeTab, onTabChange }) => {
   const tabs = [
     { id: 'home' as const, label: 'Home', icon: Home },
     { id: 'summary' as const, label: 'Summary', icon: BarChart3 },
-    { id: 'income' as const, label: 'Income', icon: DollarSign },
+    { id: 'analytics' as const, label: 'Analytics', icon: TrendingUp },
   ];
 
   return (

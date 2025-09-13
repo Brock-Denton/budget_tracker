@@ -104,7 +104,7 @@ const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ userId, currentUser
     navigate(`/app/${userId}?category=${categoryId}&tab=expense`);
   };
 
-  const handleTabChange = (tab: 'home' | 'summary' | 'income') => {
+  const handleTabChange = (tab: 'home' | 'summary' | 'income' | 'analytics') => {
     if (tab === 'home') {
       // Already on home, do nothing
       return;

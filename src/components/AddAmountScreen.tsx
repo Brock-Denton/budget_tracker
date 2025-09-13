@@ -172,9 +172,9 @@ const AddAmountScreen: React.FC<AddAmountScreenProps> = ({ userId, currentUser }
       setAmount('');
       setNote('');
 
-      // Navigate back to categories after 1.5 seconds
+      // Navigate back to user's app after 1.5 seconds
       setTimeout(() => {
-        navigate('/');
+        navigate(`/app/${userId}`);
       }, 1500);
 
     } catch (error) {

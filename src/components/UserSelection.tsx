@@ -49,7 +49,7 @@ const UserSelection: React.FC = () => {
     }
   };
 
-  const handleTabChange = (tab: 'home' | 'summary' | 'income') => {
+  const handleTabChange = (tab: 'home' | 'summary' | 'income' | 'analytics') => {
     if (tab === 'home') {
       // Already on home/user selection, do nothing
       return;
@@ -64,6 +64,12 @@ const UserSelection: React.FC = () => {
       const userId = localStorage.getItem('lastSelectedUser') || users[0]?.id;
       if (userId) {
         navigate(`/app/${userId}?tab=income`);
+      }
+    } else if (tab === 'analytics') {
+      // Navigate to analytics for the last selected user or first user
+      const userId = localStorage.getItem('lastSelectedUser') || users[0]?.id;
+      if (userId) {
+        navigate(`/app/${userId}?tab=analytics`);
       }
     }
   };

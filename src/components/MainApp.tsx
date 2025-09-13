@@ -7,6 +7,7 @@ import SummaryScreen from './SummaryScreen';
 import IncomeScreen from './IncomeScreen';
 import RecurringExpensesScreen from './RecurringExpensesScreen';
 import LargeExpensesScreen from './LargeExpensesScreen';
+import AnalyticsScreen from './AnalyticsScreen';
 import BottomNavigation from './BottomNavigation';
 import './MainApp.css';
 
@@ -15,13 +16,14 @@ const MainApp: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [activeTab, setActiveTab] = useState<'home' | 'summary' | 'income'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'summary' | 'income' | 'analytics'>('home');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (userId) {
       fetchUser(userId);
       generateRecurringExpenses(); // Generate recurring expenses when app loads
+      generateRecurringIncome(); // Generate recurring income when app loads
     }
   }, [userId]);
 
@@ -30,8 +32,8 @@ const MainApp: React.FC = () => {
     const tab = searchParams.get('tab');
     if (tab === 'recurring') {
       setActiveTab('home'); // Recurring expenses is part of the home section
-    } else if (tab && ['home', 'summary', 'income'].includes(tab)) {
-      setActiveTab(tab as 'home' | 'summary' | 'income');
+    } else if (tab && ['home', 'summary', 'income', 'analytics'].includes(tab)) {
+      setActiveTab(tab as 'home' | 'summary' | 'income' | 'analytics');
     }
   }, [searchParams]);
 
@@ -64,7 +66,19 @@ const MainApp: React.FC = () => {
     }
   };
 
-  const handleTabChange = (tab: 'home' | 'summary' | 'income') => {
+  const generateRecurringIncome = async () => {
+    try {
+      // Call the Supabase function to generate recurring income
+      const { error } = await supabase.rpc('generate_recurring_income');
+      if (error) {
+        console.error('Error generating recurring income:', error);
+      }
+    } catch (error) {
+      console.error('Error calling generate_recurring_income function:', error);
+    }
+  };
+
+  const handleTabChange = (tab: 'home' | 'summary' | 'income' | 'analytics') => {
     console.log('🔵 MainApp handleTabChange called with:', tab);
     if (tab === 'home') {
       // Reset to user selection screen
@@ -120,6 +134,8 @@ const MainApp: React.FC = () => {
         return <CategoriesScreen userId={userId!} currentUser={currentUser} />;
       case 'summary':
         return <SummaryScreen userId={userId!} currentUser={currentUser} />;
+      case 'analytics':
+        return <AnalyticsScreen userId={userId!} currentUser={currentUser} />;
       case 'income':
         return <IncomeScreen userId={userId!} currentUser={currentUser} />;
       default:
