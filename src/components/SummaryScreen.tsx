@@ -484,7 +484,7 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
                             ? `${percentage?.toFixed(0)}% left this ${period}`
                             : remaining === 0
                             ? `Budget used this ${period}`
-                            : `Over budget by $${Math.abs(remaining || 0).toFixed(2)} (${Math.abs((percentage || 0) - 100).toFixed(0)}% over)`
+                            : `Over budget by $${Math.abs(remaining || 0).toFixed(2)} (${Math.abs(remaining || 0) / (budget || 1) * 100}% over)`
                           }
                         </span>
                       </div>

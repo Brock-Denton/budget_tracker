@@ -1,6 +1,5 @@
 .recurring-expenses-screen {
   min-height: 100vh;
-  background: #0a0a0a;
   color: #fff;
   padding: 2rem 2rem 6rem 2rem;
 }
@@ -60,8 +59,8 @@
 }
 
 .add-form {
-  background: #1a1a1a;
-  border: 1px solid #333;
+  background: #2a2a2a;
+  border: none;
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 2rem;
@@ -181,10 +180,10 @@
 }
 
 .category-group {
-  background: #1a1a1a;
+  background: #2a2a2a;
   border-radius: 12px;
   padding: 1.5rem;
-  border: 1px solid #333;
+  border: none;
 }
 
 .category-header {
@@ -209,8 +208,8 @@
 }
 
 .expense-card {
-  background: #1a1a1a;
-  border: 1px solid #333;
+  background: #2a2a2a;
+  border: none;
   border-radius: 12px;
   padding: 1rem;
   transition: border-color 0.2s ease;
