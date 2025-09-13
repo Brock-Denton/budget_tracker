@@ -370,9 +370,6 @@ const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ userId, currentUser }
                 </div>
               </div>
               
-              {/* Month Label */}
-              <div className="month-label">{month.month}</div>
-              
               {/* Net Income Indicator */}
               <div 
                 className="net-indicator"
@@ -380,6 +377,9 @@ const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ userId, currentUser }
               >
                 {month.netIncome > 0 ? '+' : ''}${month.netIncome.toFixed(0)}
               </div>
+              
+              {/* Month Label */}
+              <div className="month-label">{month.month}</div>
             </div>
           ))}
         </div>
