@@ -6,6 +6,7 @@ import AddAmountScreen from './AddAmountScreen';
 import SummaryScreen from './SummaryScreen';
 import IncomeScreen from './IncomeScreen';
 import RecurringExpensesScreen from './RecurringExpensesScreen';
+import LargeExpensesScreen from './LargeExpensesScreen';
 import BottomNavigation from './BottomNavigation';
 import './MainApp.css';
 
@@ -106,6 +107,11 @@ const MainApp: React.FC = () => {
     // If tab=recurring, show recurring expenses screen
     if (tab === 'recurring') {
       return <RecurringExpensesScreen userId={userId!} currentUser={currentUser} />;
+    }
+    
+    // If tab=large, show large expenses screen
+    if (tab === 'large') {
+      return <LargeExpensesScreen userId={userId!} currentUser={currentUser} />;
     }
     
     // Otherwise show the selected tab

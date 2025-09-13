@@ -301,13 +301,16 @@
   }
 }
 
-.recurring-expenses-section {
+.special-expenses-section {
   margin-top: 2rem;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
 }
 
-.recurring-expenses-btn {
+.recurring-expenses-btn,
+.large-expenses-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -319,13 +322,28 @@
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  width: 100%;
+  max-width: 300px;
+  justify-content: center;
 }
 
-.recurring-expenses-btn:hover {
+.recurring-expenses-btn:hover,
+.large-expenses-btn:hover {
   background: #3a3a3a;
   border-color: #555;
 }
 
-.recurring-expenses-btn:active {
+.recurring-expenses-btn:active,
+.large-expenses-btn:active {
   transform: translateY(1px);
+}
+
+.large-expenses-btn {
+  background: #2a2a2a;
+  border-color: #444;
+}
+
+.large-expenses-btn:hover {
+  background: #3a3a3a;
+  border-color: #555;
 }

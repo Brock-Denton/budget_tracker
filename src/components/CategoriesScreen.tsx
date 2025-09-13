@@ -37,6 +37,7 @@ const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ userId, currentUser
         .from('categories')
         .select('*')
         .eq('is_recurring_only', false)
+        .eq('is_large_expense_only', false)
         .order('name');
 
       if (error) throw error;

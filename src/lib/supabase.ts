@@ -49,3 +49,16 @@ export interface RecurringExpense {
   created_at: string
   updated_at: string
 }
+
+export interface LargeExpense {
+  id: string
+  user_id: string
+  category_id: string
+  total_amount: number
+  monthly_amount: number
+  note?: string
+  day_of_month: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
