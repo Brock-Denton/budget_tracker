@@ -164,8 +164,15 @@ const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ userId, currentUser }
       const totalIncome = monthlyData.reduce((sum, month) => sum + month.income, 0);
       const totalExpenses = monthlyData.reduce((sum, month) => sum + month.expenses, 0);
       const totalNetIncome = totalIncome - totalExpenses;
-      const averageMonthlyIncome = monthlyData.length > 0 ? totalIncome / monthlyData.length : 0;
-      const averageMonthlyExpenses = monthlyData.length > 0 ? totalExpenses / monthlyData.length : 0;
+      
+      // Only include months with logged expenses in average calculations
+      const monthsWithExpenses = monthlyData.filter(month => month.expenses > 0);
+      const monthsWithExpensesCount = monthsWithExpenses.length;
+      
+      const averageMonthlyIncome = monthsWithExpensesCount > 0 ? 
+        monthsWithExpenses.reduce((sum, month) => sum + month.income, 0) / monthsWithExpensesCount : 0;
+      const averageMonthlyExpenses = monthsWithExpensesCount > 0 ? 
+        monthsWithExpenses.reduce((sum, month) => sum + month.expenses, 0) / monthsWithExpensesCount : 0;
       const averageMonthlyNet = averageMonthlyIncome - averageMonthlyExpenses;
 
       // Calculate top spending users
