@@ -18,6 +18,8 @@ export interface Category {
   color: string
   budget?: number | null
   is_recurring_only?: boolean
+  is_large_expense_only?: boolean
+  is_linked_to_normal?: boolean
 }
 
 export interface Expense {

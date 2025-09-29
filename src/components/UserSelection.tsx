@@ -24,7 +24,7 @@ const UserSelection: React.FC = () => {
     try {
       const [usersResult, categoriesResult] = await Promise.all([
         supabase.from('users').select('*').order('name'),
-        supabase.from('categories').select('*').eq('is_recurring_only', false).eq('is_large_expense_only', false).order('name')
+        supabase.from('categories').select('*').order('name')
       ]);
 
       if (usersResult.error) throw usersResult.error;
@@ -78,6 +78,17 @@ const UserSelection: React.FC = () => {
     if (!newCategoryName.trim()) return;
 
     try {
+      // Check if category already exists (by name)
+      const existingCategory = categories.find(cat => cat.name.toLowerCase() === newCategoryName.toLowerCase());
+      
+      if (existingCategory) {
+        // Category already exists, just use it
+        setCategories([...categories]); // Refresh the list
+        setNewCategoryName('');
+        setShowAddCategory(false);
+        return;
+      }
+
       // Get existing colors
       const existingColors = categories.map(cat => cat.color);
       const colors = [
@@ -131,7 +142,60 @@ const UserSelection: React.FC = () => {
     }
   };
 
+  const linkCategoryToNormalExpenses = async (categoryId: string) => {
+    try {
+      // Update the category to mark it as linked to Normal Expenses
+      const { error } = await supabase
+        .from('categories')
+        .update({ is_linked_to_normal: true })
+        .eq('id', categoryId);
+
+      if (error) throw error;
+
+      // Update local state
+      setCategories(categories.map(cat => 
+        cat.id === categoryId ? { ...cat, is_linked_to_normal: true } : cat
+      ));
+    } catch (error) {
+      console.error('Error linking category to Normal Expenses:', error);
+      alert('Failed to link category. Please try again.');
+    }
+  };
+
+  const unlinkCategoryFromNormalExpenses = async (categoryId: string) => {
+    try {
+      // Update the category to remove the link to Normal Expenses
+      const { error } = await supabase
+        .from('categories')
+        .update({ is_linked_to_normal: false })
+        .eq('id', categoryId);
+
+      if (error) throw error;
+
+      // Update local state
+      setCategories(categories.map(cat => 
+        cat.id === categoryId ? { ...cat, is_linked_to_normal: false } : cat
+      ));
+    } catch (error) {
+      console.error('Error unlinking category from Normal Expenses:', error);
+      alert('Failed to unlink category. Please try again.');
+    }
+  };
+
   const handleDeleteCategory = async (categoryId: string) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    const isSpecialCategory = category?.is_recurring_only || category?.is_large_expense_only;
+    
+    if (isSpecialCategory) {
+      // If it's a special category that's linked, just unlink it instead of deleting
+      if (category?.is_linked_to_normal) {
+        await unlinkCategoryFromNormalExpenses(categoryId);
+      } else {
+        alert('Cannot delete categories that are used for Recurring or Large expenses. Please delete them from their respective sections.');
+      }
+      return;
+    }
+
     if (!window.confirm('Are you sure you want to delete this category? This will also delete all associated expenses.')) {
       return;
     }
@@ -230,32 +294,77 @@ const UserSelection: React.FC = () => {
         <div className="add-category-modal">
           <div className="modal-content">
             <h3>Add Category</h3>
-            <input
-              type="text"
-              placeholder="Category name"
-              value={newCategoryName}
-              onChange={(e) => setNewCategoryName(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleAddCategory()}
-              autoFocus
-            />
+            
+            {/* Show existing categories from Recurring and Large expenses */}
+            {(() => {
+              const existingCategories = categories.filter(cat => cat.is_recurring_only || cat.is_large_expense_only);
+              return existingCategories.length > 0 && (
+                <div className="existing-categories-section">
+                  <h4>Use existing category:</h4>
+                  <div className="existing-categories-grid">
+                    {existingCategories.map((category) => (
+                      <button
+                        key={category.id}
+                        className="existing-category-btn"
+                        style={{ backgroundColor: category.color }}
+                        onClick={async () => {
+                          // Link this category to Normal Expenses
+                          await linkCategoryToNormalExpenses(category.id);
+                          setNewCategoryName('');
+                          setShowAddCategory(false);
+                        }}
+                      >
+                        {category.name}
+                        <span className="category-type">
+                          {category.is_recurring_only ? 'Recurring' : 'Large'}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="divider">
+                    <span>OR</span>
+                  </div>
+                </div>
+              );
+            })()}
+            
+            <div className="create-new-section">
+              <h4>Create new category:</h4>
+              <input
+                type="text"
+                placeholder="Category name"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleAddCategory()}
+                autoFocus
+              />
+            </div>
+            
             <div className="modal-actions">
               <button onClick={() => setShowAddCategory(false)}>Cancel</button>
-              <button onClick={handleAddCategory}>Add</button>
+              <button onClick={handleAddCategory}>Create New</button>
             </div>
           </div>
         </div>
       )}
       
       <div className="categories-grid">
-        {categories.map((category) => (
-          <div key={category.id} className="category-item">
-            <button
-              className="category-button"
-              style={{ backgroundColor: category.color }}
-              onClick={() => !deleteMode && handleCategorySelect(category.id)}
-            >
-              {category.name}
-            </button>
+        {categories
+          .filter(category => {
+            // Show categories that are either:
+            // 1. Originally Normal Expenses categories (both flags false)
+            // 2. Categories that have been linked to Normal Expenses
+            return (!category.is_recurring_only && !category.is_large_expense_only) || category.is_linked_to_normal;
+          })
+          .map((category) => (
+            <div key={category.id} className="category-item">
+              <button
+                className="category-button"
+                style={{ backgroundColor: category.color }}
+                onClick={() => !deleteMode && handleCategorySelect(category.id)}
+              >
+                {category.name}
+              </button>
             {deleteMode && (
               <button
                 className="delete-category-btn"
@@ -264,12 +373,17 @@ const UserSelection: React.FC = () => {
                   handleDeleteCategory(category.id);
                 }}
                 disabled={deletingCategory === category.id}
+                title={
+                  category.is_recurring_only || category.is_large_expense_only
+                    ? "Unlink from Normal Expenses"
+                    : "Delete category"
+                }
               >
                 <Trash2 size={16} />
               </button>
             )}
-          </div>
-        ))}
+            </div>
+          ))}
       </div>
       
       <div className="special-expenses-section">

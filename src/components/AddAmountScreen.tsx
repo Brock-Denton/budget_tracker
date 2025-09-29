@@ -47,6 +47,7 @@ const AddAmountScreen: React.FC<AddAmountScreenProps> = ({ userId, currentUser }
 
   const fetchCategories = async () => {
     try {
+      // Fetch all categories including those from recurring and large expenses
       const { data, error } = await supabase
         .from('categories')
         .select('*')
@@ -72,6 +73,17 @@ const AddAmountScreen: React.FC<AddAmountScreenProps> = ({ userId, currentUser }
     if (!newCategoryName.trim()) return;
 
     try {
+      // Check if category already exists (by name)
+      const existingCategory = categories.find(cat => cat.name.toLowerCase() === newCategoryName.toLowerCase());
+      
+      if (existingCategory) {
+        // Category already exists, just use it
+        setCategories([...categories]); // Refresh the list
+        setNewCategoryName('');
+        setShowAddCategory(false);
+        return;
+      }
+
       // Get existing colors
       const existingColors = categories.map(cat => cat.color);
       const colors = [

@@ -152,8 +152,24 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
   };
 
   const calculateCategorySummaries = (categories: Category[], expenses: Expense[], users: User[]): CategorySummary[] => {
-    return categories.map(category => {
-      const categoryExpenses = expenses.filter(expense => expense.category_id === category.id);
+    // Group categories by name to handle related categories (same name from different expense types)
+    const categoryGroups = new Map<string, Category[]>();
+    
+    categories.forEach(category => {
+      const categoryName = category.name.toLowerCase();
+      if (!categoryGroups.has(categoryName)) {
+        categoryGroups.set(categoryName, []);
+      }
+      categoryGroups.get(categoryName)!.push(category);
+    });
+
+    // Create summaries for each category group
+    const summaries: CategorySummary[] = [];
+    
+    categoryGroups.forEach((categoryGroup, categoryName) => {
+      // Combine expenses from all categories with the same name
+      const allCategoryIds = categoryGroup.map(cat => cat.id);
+      const categoryExpenses = expenses.filter(expense => allCategoryIds.includes(expense.category_id));
       const spent = categoryExpenses.reduce((sum, expense) => sum + expense.amount, 0);
       
       // Calculate user expense breakdown
@@ -173,27 +189,30 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
         };
       }).sort((a, b) => b.amount - a.amount); // Sort by amount descending
       
+      // Use the first category as the primary category (for color, budget, etc.)
+      const primaryCategory = categoryGroup[0];
+      
       let remaining: number | undefined;
       let percentage: number | undefined;
       let adjustedBudget: number | null | undefined;
       
-      if (category.budget) {
+      if (primaryCategory.budget) {
         // Calculate budget based on period
         switch (period) {
           case 'day':
-            adjustedBudget = category.budget / 30; // Monthly budget divided by 30 days
+            adjustedBudget = primaryCategory.budget / 30; // Monthly budget divided by 30 days
             break;
           case 'week':
-            adjustedBudget = category.budget / 4; // Monthly budget divided by 4 weeks
+            adjustedBudget = primaryCategory.budget / 4; // Monthly budget divided by 4 weeks
             break;
           case 'month':
-            adjustedBudget = category.budget; // Monthly budget as is
+            adjustedBudget = primaryCategory.budget; // Monthly budget as is
             break;
           case 'year':
-            adjustedBudget = category.budget * 12; // Monthly budget multiplied by 12
+            adjustedBudget = primaryCategory.budget * 12; // Monthly budget multiplied by 12
             break;
           default:
-            adjustedBudget = category.budget;
+            adjustedBudget = primaryCategory.budget;
         }
         
         if (adjustedBudget !== null && adjustedBudget !== undefined) {
@@ -202,15 +221,17 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
         }
       }
 
-      return {
-        category,
+      summaries.push({
+        category: primaryCategory,
         spent,
         budget: adjustedBudget,
         remaining,
         percentage,
         userExpenses
-      };
-    }).filter(summary => summary.spent > 0 || summary.budget)
+      });
+    });
+
+    return summaries.filter(summary => summary.spent > 0 || summary.budget)
       .sort((a, b) => {
         // First sort by spent amount (largest to smallest)
         if (a.spent !== b.spent) {
