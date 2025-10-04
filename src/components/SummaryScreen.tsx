@@ -77,12 +77,24 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
       console.log('SummaryScreen fetchData - expenses found:', expensesData?.length || 0);
       console.log('SummaryScreen fetchData - expenses:', expensesData);
 
-      // Fetch income (from all users) - filter by date range
-      const { data: incomeData, error: incomeError } = await supabase
+      // Fetch income (from all users) - use most recent income entries for current month
+      // Income should be available for the current month regardless of when it was entered
+      let { data: incomeData, error: incomeError } = await supabase
         .from('income')
         .select('*')
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString());
+
+      // If no income found for this specific month, use the most recent income entries
+      if (!incomeData || incomeData.length === 0) {
+        const { data: recentIncomeData, error: recentIncomeError } = await supabase
+          .from('income')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (recentIncomeError) throw recentIncomeError;
+        incomeData = recentIncomeData;
+      }
 
       if (incomeError) throw incomeError;
 
