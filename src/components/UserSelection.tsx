@@ -41,10 +41,13 @@ const UserSelection: React.FC = () => {
 
   const handleUserSelect = (user: User) => {
     setSelectedUser(user);
+    // Save the selected user to localStorage
+    localStorage.setItem('lastSelectedUserId', user.id);
   };
 
   const handleCategorySelect = (categoryId: string) => {
     if (selectedUser) {
+      localStorage.setItem('lastSelectedUserId', selectedUser.id);
       navigate(`/app/${selectedUser.id}?category=${categoryId}&tab=expense`);
     }
   };
@@ -55,19 +58,19 @@ const UserSelection: React.FC = () => {
       return;
     } else if (tab === 'summary') {
       // Navigate to summary for the last selected user or first user
-      const userId = localStorage.getItem('lastSelectedUser') || users[0]?.id;
+      const userId = localStorage.getItem('lastSelectedUserId') || users[0]?.id;
       if (userId) {
         navigate(`/app/${userId}?tab=summary`);
       }
     } else if (tab === 'income') {
       // Navigate to income for the last selected user or first user
-      const userId = localStorage.getItem('lastSelectedUser') || users[0]?.id;
+      const userId = localStorage.getItem('lastSelectedUserId') || users[0]?.id;
       if (userId) {
         navigate(`/app/${userId}?tab=income`);
       }
     } else if (tab === 'analytics') {
       // Navigate to analytics for the last selected user or first user
-      const userId = localStorage.getItem('lastSelectedUser') || users[0]?.id;
+      const userId = localStorage.getItem('lastSelectedUserId') || users[0]?.id;
       if (userId) {
         navigate(`/app/${userId}?tab=analytics`);
       }
@@ -389,7 +392,10 @@ const UserSelection: React.FC = () => {
       <div className="special-expenses-section">
         <button 
           className="recurring-expenses-btn"
-          onClick={() => navigate(`/app/${selectedUser.id}?tab=recurring`)}
+          onClick={() => {
+            localStorage.setItem('lastSelectedUserId', selectedUser.id);
+            navigate(`/app/${selectedUser.id}?tab=recurring`);
+          }}
         >
           <Repeat size={20} />
           Recurring Expenses
@@ -397,7 +403,10 @@ const UserSelection: React.FC = () => {
         
         <button 
           className="large-expenses-btn"
-          onClick={() => navigate(`/app/${selectedUser.id}?tab=large`)}
+          onClick={() => {
+            localStorage.setItem('lastSelectedUserId', selectedUser.id);
+            navigate(`/app/${selectedUser.id}?tab=large`);
+          }}
         >
           <Calculator size={20} />
           Large Expenses

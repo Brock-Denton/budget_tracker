@@ -18,14 +18,41 @@ const MainApp: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<'home' | 'summary' | 'income' | 'analytics'>('home');
   const [loading, setLoading] = useState(true);
+  const [lastSelectedUser, setLastSelectedUser] = useState<User | null>(null);
 
   useEffect(() => {
     if (userId) {
       fetchUser(userId);
       generateRecurringExpenses(); // Generate recurring expenses when app loads
       generateRecurringIncome(); // Generate recurring income when app loads
+      
+      // Load last selected user from localStorage
+      loadLastSelectedUser();
     }
   }, [userId]);
+
+  const loadLastSelectedUser = async () => {
+    try {
+      const lastSelectedUserId = localStorage.getItem('lastSelectedUserId');
+      if (lastSelectedUserId && lastSelectedUserId !== userId) {
+        // Fetch the last selected user's data
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', lastSelectedUserId)
+          .single();
+
+        if (error) throw error;
+        setLastSelectedUser(data);
+      } else {
+        // If no last selected user or same as current, use current user
+        setLastSelectedUser(null);
+      }
+    } catch (error) {
+      console.error('Error loading last selected user:', error);
+      setLastSelectedUser(null);
+    }
+  };
 
   useEffect(() => {
     // Handle URL parameters for tab and category selection
@@ -146,7 +173,7 @@ const MainApp: React.FC = () => {
   return (
     <div className="main-app">
       <header className="app-header">
-        <h1 className="user-welcome">Welcome, {currentUser.name}</h1>
+        <h1 className="user-welcome">Welcome, {lastSelectedUser?.name || currentUser.name}</h1>
       </header>
       
       <main className="app-content">

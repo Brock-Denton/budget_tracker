@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Edit3, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Edit3, ChevronLeft, ChevronRight, Trash2, Edit2 } from 'lucide-react';
 import { supabase, Category, Expense, Income } from '../lib/supabase';
 import { User } from '../lib/supabase';
 import './SummaryScreen.css';
@@ -39,6 +39,12 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
   const [budgetValue, setBudgetValue] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [editingExpense, setEditingExpense] = useState<string | null>(null);
+  const [editExpenseAmount, setEditExpenseAmount] = useState('');
+  const [editExpenseNote, setEditExpenseNote] = useState('');
+  const [editExpenseUserId, setEditExpenseUserId] = useState('');
+  const [editExpenseCategoryId, setEditExpenseCategoryId] = useState('');
+  const [deletableCategories, setDeletableCategories] = useState<Set<string>>(new Set());
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -73,6 +79,7 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
         .lte('created_at', endDate.toISOString());
 
       if (expensesError) throw expensesError;
+
       
       console.log('SummaryScreen fetchData - expenses found:', expensesData?.length || 0);
       console.log('SummaryScreen fetchData - expenses:', expensesData);
@@ -106,6 +113,16 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
       // Calculate category summaries
       const summaries = calculateCategorySummaries(categoriesData || [], expensesData || [], usersData || []);
       setCategorySummaries(summaries);
+
+      // Check which categories can be deleted (no expenses at all)
+      const deletable = new Set<string>();
+      for (const category of categoriesData || []) {
+        const hasExpenses = await hasAnyExpenses(category.id);
+        if (!hasExpenses) {
+          deletable.add(category.id);
+        }
+      }
+      setDeletableCategories(deletable);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -181,7 +198,9 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
     categoryGroups.forEach((categoryGroup, categoryName) => {
       // Combine expenses from all categories with the same name
       const allCategoryIds = categoryGroup.map(cat => cat.id);
-      const categoryExpenses = expenses.filter(expense => allCategoryIds.includes(expense.category_id));
+        const categoryExpenses = expenses.filter(expense => allCategoryIds.includes(expense.category_id));
+      
+      // Calculate total spent
       const spent = categoryExpenses.reduce((sum, expense) => sum + expense.amount, 0);
       
       // Calculate user expense breakdown
@@ -331,7 +350,203 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
     setCurrentMonth(new Date());
   };
 
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const handleEditExpense = (expense: Expense) => {
+    setEditingExpense(expense.id);
+    setEditExpenseAmount(expense.amount.toString());
+    setEditExpenseNote(expense.note || '');
+    setEditExpenseUserId(expense.user_id);
+    setEditExpenseCategoryId(expense.category_id);
+  };
+
+  const handleSaveExpense = async (expenseId: string) => {
+    try {
+      const amount = parseFloat(editExpenseAmount);
+      
+      if (isNaN(amount) || amount <= 0) {
+        alert('Please enter a valid amount greater than 0');
+        return;
+      }
+
+      const updateData = {
+        amount: amount,
+        note: editExpenseNote.trim() || null,
+        user_id: editExpenseUserId,
+        category_id: editExpenseCategoryId
+      };
+      
+      console.log('Updating expense:', expenseId, 'with data:', updateData);
+      
+      const { error } = await supabase
+        .from('expenses')
+        .update(updateData)
+        .eq('id', expenseId);
+
+      if (error) throw error;
+
+      // Update local state
+      const updatedExpenses = expenses.map(expense => 
+        expense.id === expenseId 
+          ? { ...expense, amount: amount, note: editExpenseNote.trim() || undefined, user_id: editExpenseUserId, category_id: editExpenseCategoryId }
+          : expense
+      );
+      setExpenses(updatedExpenses);
+
+      // Recalculate summaries
+      const summaries = calculateCategorySummaries(categories, updatedExpenses, users);
+      setCategorySummaries(summaries);
+
+      // Clear editing state
+      setEditingExpense(null);
+      setEditExpenseAmount('');
+      setEditExpenseNote('');
+
+    } catch (error) {
+      console.error('Error updating expense:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Failed to update expense: ${errorMessage}. Please try again.`);
+    }
+  };
+
+  const handleCancelExpenseEdit = () => {
+    setEditingExpense(null);
+    setEditExpenseAmount('');
+    setEditExpenseNote('');
+    setEditExpenseUserId('');
+    setEditExpenseCategoryId('');
+  };
+
+  const handleDeleteExpense = async (expenseId: string) => {
+    if (!window.confirm('Are you sure you want to delete this expense?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('expenses')
+        .delete()
+        .eq('id', expenseId);
+
+      if (error) throw error;
+
+      // Remove from local state
+      setExpenses(expenses.filter(expense => expense.id !== expenseId));
+
+      // Recalculate summaries
+      const summaries = calculateCategorySummaries(categories, expenses.filter(expense => expense.id !== expenseId), users);
+      setCategorySummaries(summaries);
+
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      alert('Failed to delete expense. Please try again.');
+    }
+  };
+
+  const hasAnyExpenses = async (categoryId: string): Promise<boolean> => {
+    try {
+      // Check if there are any expenses in the expenses table for this category
+      const { data: regularExpenses } = await supabase
+        .from('expenses')
+        .select('id')
+        .eq('category_id', categoryId)
+        .limit(1);
+
+      if (regularExpenses && regularExpenses.length > 0) {
+        return true;
+      }
+
+      // Check if there are any ACTIVE recurring expenses for this category
+      const { data: recurringExpenses } = await supabase
+        .from('recurring_expenses')
+        .select('id')
+        .eq('category_id', categoryId)
+        .eq('is_active', true)
+        .limit(1);
+
+      if (recurringExpenses && recurringExpenses.length > 0) {
+        return true;
+      }
+
+      // Check if there are any ACTIVE large expenses for this category
+      const { data: largeExpenses } = await supabase
+        .from('large_expenses')
+        .select('id')
+        .eq('category_id', categoryId)
+        .eq('is_active', true)
+        .limit(1);
+
+      if (largeExpenses && largeExpenses.length > 0) {
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Error checking for expenses:', error);
+      // If there's an error, assume there are expenses to be safe
+      return true;
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId: string, categoryName: string) => {
+    if (!window.confirm(`Are you sure you want to delete the category "${categoryName}"? This action cannot be undone.`)) {
+      return;
+    }
+    try {
+      // First check if there are any recurring or large expenses using this category
+      const { data: recurringExpenses } = await supabase
+        .from('recurring_expenses')
+        .select('id')
+        .eq('category_id', categoryId);
+      
+      const { data: largeExpenses } = await supabase
+        .from('large_expenses')
+        .select('id')
+        .eq('category_id', categoryId);
+
+      if (recurringExpenses && recurringExpenses.length > 0) {
+        alert('Cannot delete category: It is still being used by recurring expenses. Please update or delete those expenses first.');
+        return;
+      }
+
+      if (largeExpenses && largeExpenses.length > 0) {
+        alert('Cannot delete category: It is still being used by large expenses. Please update or delete those expenses first.');
+        return;
+      }
+
+      // Delete the category
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', categoryId);
+      
+      if (error) throw error;
+
+      // Update local state
+      setCategories(categories.filter(category => category.id !== categoryId));
+      const summaries = calculateCategorySummaries(
+        categories.filter(category => category.id !== categoryId), 
+        expenses, 
+        users
+      );
+      setCategorySummaries(summaries);
+      
+      // Remove from deletable categories
+      const newDeletable = new Set(deletableCategories);
+      newDeletable.delete(categoryId);
+      setDeletableCategories(newDeletable);
+      
+      // Clear selected category if it was the deleted one
+      if (selectedCategory === categoryId) {
+        setSelectedCategory(null);
+      }
+      
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      alert('Failed to delete category. Please try again.');
+    }
+  };
+
+    const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
   
   // Calculate total budgeted amount based on period
   let totalBudgeted = 0;
@@ -458,6 +673,7 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
                     <button 
                       className="edit-budget-btn"
                       onClick={() => handleEditBudget(category.id, budget || undefined)}
+                      title="Edit budget"
                     >
                       <Edit3 size={16} />
                     </button>
@@ -478,6 +694,11 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
                     <div className="budget-edit-actions">
                       <button onClick={() => handleSaveBudget(category.id)}>Save</button>
                       <button onClick={handleCancelEdit}>Cancel</button>
+                      {spent === 0 && deletableCategories.has(category.id) && (
+                        <button onClick={() => handleDeleteCategory(category.id, category.name)}>
+                          Delete
+                        </button>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -547,11 +768,14 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
                         
                         <h4>Recent Transactions</h4>
                         <div className="transactions-list">
-                          {expenses
-                            .filter(expense => expense.category_id === category.id)
-                            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                            .slice(0, 10)
-                            .map((expense) => {
+                          {(() => {
+                            // Get regular expenses for this category
+                            const categoryExpenses = expenses.filter(expense => expense.category_id === category.id);
+                            
+                            return categoryExpenses
+                              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                              .slice(0, 10)
+                              .map((expense) => {
                               const user = users.find(u => u.id === expense.user_id);
                               return (
                                 <div key={expense.id} className="transaction-item">
@@ -560,32 +784,113 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
                                     style={{ backgroundColor: user?.color || '#888' }}
                                   />
                                   <div className="transaction-details">
-                                    <div className="transaction-header">
-                                      <span className="transaction-user">{user?.name || 'Unknown'}</span>
-                                      <span 
-                                        className="transaction-amount"
-                                        style={{ color: user?.color || '#ef4444' }}
-                                      >
-                                        ${expense.amount.toFixed(2)}
-                                      </span>
-                                    </div>
-                                    <div className="transaction-meta">
-                                      <span className="transaction-date">
-                                        {new Date(expense.created_at).toLocaleDateString('en-US', {
-                                          month: 'short',
-                                          day: 'numeric',
-                                          hour: '2-digit',
-                                          minute: '2-digit'
-                                        })}
-                                      </span>
-                                      {expense.note && (
-                                        <span className="transaction-note">{expense.note}</span>
-                                      )}
-                                    </div>
+                                    {editingExpense === expense.id ? (
+                                      <div className="expense-edit-form">
+                                        <div className="expense-edit-header">
+                                          <span className="transaction-user">{user?.name || 'Unknown'}</span>
+                                        </div>
+                                        <input
+                                          type="number"
+                                          step="0.01"
+                                          min="0"
+                                          placeholder="Amount"
+                                          value={editExpenseAmount}
+                                          onChange={(e) => setEditExpenseAmount(e.target.value)}
+                                          className="expense-edit-amount"
+                                        />
+                                        <input
+                                          type="text"
+                                          placeholder="Note (optional)"
+                                          value={editExpenseNote}
+                                          onChange={(e) => setEditExpenseNote(e.target.value)}
+                                          className="expense-edit-note"
+                                        />
+                                        <select
+                                          value={editExpenseUserId}
+                                          onChange={(e) => setEditExpenseUserId(e.target.value)}
+                                          className="expense-edit-user"
+                                        >
+                                          <option value="">Select user...</option>
+                                          {users.map((user) => (
+                                            <option key={user.id} value={user.id}>
+                                              {user.name}
+                                            </option>
+                                          ))}
+                                        </select>
+                                        <select
+                                          value={editExpenseCategoryId}
+                                          onChange={(e) => setEditExpenseCategoryId(e.target.value)}
+                                          className="expense-edit-category"
+                                        >
+                                          <option value="">Select category...</option>
+                                          {categories.map((category) => (
+                                            <option key={category.id} value={category.id}>
+                                              {category.name}
+                                            </option>
+                                          ))}
+                                        </select>
+                                        <div className="expense-edit-actions">
+                                          <button 
+                                            onClick={() => handleSaveExpense(expense.id)}
+                                            className="save-expense-btn"
+                                          >
+                                            Save
+                                          </button>
+                                          <button 
+                                            onClick={handleCancelExpenseEdit}
+                                            className="cancel-expense-btn"
+                                          >
+                                            Cancel
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <div className="transaction-header">
+                                          <span className="transaction-user">{user?.name || 'Unknown'}</span>
+                                          <div className="transaction-actions">
+                                            <span 
+                                              className="transaction-amount"
+                                              style={{ color: user?.color || '#ef4444' }}
+                                            >
+                                              ${expense.amount.toFixed(2)}
+                                            </span>
+                                            <button 
+                                              className="edit-expense-btn"
+                                              onClick={() => handleEditExpense(expense)}
+                                              title="Edit expense"
+                                            >
+                                              <Edit2 size={14} />
+                                            </button>
+                                            <button 
+                                              className="delete-expense-btn"
+                                              onClick={() => handleDeleteExpense(expense.id)}
+                                              title="Delete expense"
+                                            >
+                                              <Trash2 size={14} />
+                                            </button>
+                                          </div>
+                                        </div>
+                                        <div className="transaction-meta">
+                                          <span className="transaction-date">
+                                            {new Date(expense.created_at).toLocaleDateString('en-US', {
+                                              month: 'short',
+                                              day: 'numeric',
+                                              hour: '2-digit',
+                                              minute: '2-digit'
+                                            })}
+                                          </span>
+                                          {expense.note && (
+                                            <span className="transaction-note">{expense.note}</span>
+                                          )}
+                                        </div>
+                                      </>
+                                    )}
                                   </div>
                                 </div>
                               );
-                            })}
+                            });
+                          })()}
                         </div>
                       </div>
                     )}

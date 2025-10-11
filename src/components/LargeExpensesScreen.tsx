@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit3, Trash2, Calculator } from 'lucide-react';
-import { supabase, Category, LargeExpense } from '../lib/supabase';
+import { supabase, Category, LargeExpense, User } from '../lib/supabase';
 import BottomNavigation from './BottomNavigation';
 import './LargeExpensesScreen.css';
 
@@ -14,9 +14,14 @@ const LargeExpensesScreen: React.FC<LargeExpensesScreenProps> = ({ userId, curre
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
   const [largeExpenses, setLargeExpenses] = useState<LargeExpense[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingExpense, setEditingExpense] = useState<string | null>(null);
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
+  const [editCategoryName, setEditCategoryName] = useState('');
+  const [newCategoryNameInput, setNewCategoryNameInput] = useState('');
+  const [editUserId, setEditUserId] = useState('');
   
   // Form states
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -28,11 +33,10 @@ const LargeExpensesScreen: React.FC<LargeExpensesScreenProps> = ({ userId, curre
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch categories (only large expense categories)
+      // Fetch all categories (regular + recurring + large) so users can share categories
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select('*')
-        .eq('is_large_expense_only', true)
         .order('name');
 
       if (categoriesError) throw categoriesError;
@@ -53,8 +57,17 @@ const LargeExpensesScreen: React.FC<LargeExpensesScreenProps> = ({ userId, curre
 
       if (largeExpensesError) throw largeExpensesError;
 
+      // Fetch users
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('*')
+        .order('name');
+
+      if (usersError) throw usersError;
+
       setCategories(categoriesData || []);
       setLargeExpenses(largeExpensesData || []);
+      setUsers(usersData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       alert('Error loading large expenses. Please try again.');
@@ -105,9 +118,57 @@ const LargeExpensesScreen: React.FC<LargeExpensesScreenProps> = ({ userId, curre
       let categoryId = '';
       
       if (editingExpense) {
-        // For editing, use existing category
+        // For editing, check if category was changed or use existing
         const expense = largeExpenses.find(e => e.id === editingExpense);
-        categoryId = expense?.category_id || '';
+        const currentCategoryName = expense ? getCategoryName(expense.category_id) : '';
+        
+        if (selectedCategoryName !== currentCategoryName) {
+          // Category was changed, find the new category
+          const existingCategory = categories.find(cat => cat.name.toLowerCase() === selectedCategoryName.toLowerCase());
+          
+          if (existingCategory) {
+            categoryId = existingCategory.id;
+          } else {
+            // Create new category for the changed selection
+            const colors = [
+              '#F59E0B', '#8B5CF6', '#6B7280', '#EC4899', '#06B6D4', 
+              '#84CC16', '#F97316', '#EF4444', '#10B981', '#3B82F6',
+              '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+              '#DDA0DD', '#98D8C8', '#FFB347', '#87CEEB', '#D8BFD8',
+              '#F0E68C', '#FFA07A', '#20B2AA', '#FF69B4', '#9370DB'
+            ];
+            
+            const existingColors = categories.map(cat => cat.color);
+            let selectedColor = colors[Math.floor(Math.random() * colors.length)];
+            let attempts = 0;
+            while (existingColors.includes(selectedColor) && attempts < 50) {
+              selectedColor = colors[Math.floor(Math.random() * colors.length)];
+              attempts++;
+            }
+            
+            if (existingColors.includes(selectedColor)) {
+              const hue = Math.floor(Math.random() * 360);
+              const saturation = 70 + Math.floor(Math.random() * 30);
+              const lightness = 50 + Math.floor(Math.random() * 20);
+              selectedColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+            }
+
+            const { data: categoryData, error: categoryError } = await supabase
+              .from('categories')
+              .insert([{ 
+                name: selectedCategoryName.trim(), 
+                color: selectedColor
+              }])
+              .select()
+              .single();
+
+            if (categoryError) throw categoryError;
+            categoryId = categoryData.id;
+          }
+        } else {
+          // Category wasn't changed, use existing
+          categoryId = expense?.category_id || '';
+        }
       } else {
         // Check if category already exists (by name)
         const existingCategory = categories.find(cat => cat.name.toLowerCase() === categoryName.toLowerCase());
@@ -143,8 +204,7 @@ const LargeExpensesScreen: React.FC<LargeExpensesScreenProps> = ({ userId, curre
             .from('categories')
             .insert([{ 
               name: categoryName.trim(), 
-              color: selectedColor,
-              is_large_expense_only: true
+              color: selectedColor
             }])
             .select()
             .single();
@@ -156,15 +216,22 @@ const LargeExpensesScreen: React.FC<LargeExpensesScreenProps> = ({ userId, curre
 
       if (editingExpense) {
         // Update existing large expense
+        const updateData: any = {
+          total_amount: totalAmountNum,
+          monthly_amount: monthlyAmount,
+          note: note.trim() || null,
+          day_of_month: dayNum,
+          updated_at: new Date().toISOString()
+        };
+        
+        // Include category_id if it was changed
+        if (categoryId) {
+          updateData.category_id = categoryId;
+        }
+        
         const { error } = await supabase
           .from('large_expenses')
-          .update({
-            total_amount: totalAmountNum,
-            monthly_amount: monthlyAmount,
-            note: note.trim() || null,
-            day_of_month: dayNum,
-            updated_at: new Date().toISOString()
-          })
+          .update(updateData)
           .eq('id', editingExpense);
 
         if (error) throw error;
@@ -267,9 +334,139 @@ const LargeExpensesScreen: React.FC<LargeExpensesScreenProps> = ({ userId, curre
     }
   };
 
+  const handleEditCategory = (categoryName: string) => {
+    setEditingCategory(categoryName);
+    setEditCategoryName(categoryName);
+    setNewCategoryNameInput('');
+    
+    // Find the first expense in this category to get the current user
+    const categoryExpenses = largeExpenses.filter(expense => 
+      getCategoryName(expense.category_id) === categoryName
+    );
+    if (categoryExpenses.length > 0) {
+      setEditUserId(categoryExpenses[0].user_id);
+    }
+  };
+
+  const handleCancelCategoryEdit = () => {
+    setEditingCategory(null);
+    setEditCategoryName('');
+    setNewCategoryNameInput('');
+    setEditUserId('');
+  };
+
+  const handleSaveCategoryEdit = async (oldCategoryName: string) => {
+    try {
+      let newCategoryName = editCategoryName;
+      
+      // If creating a new category, use the input value
+      if (editCategoryName === "__new__") {
+        newCategoryName = newCategoryNameInput.trim();
+        if (!newCategoryName) {
+          alert('Please enter a new category name');
+          return;
+        }
+      }
+      
+      if (!newCategoryName) {
+        alert('Please select a category or create a new one');
+        return;
+      }
+
+      // Find all large expenses in this category
+      const categoryExpenses = largeExpenses.filter(expense => 
+        getCategoryName(expense.category_id) === oldCategoryName
+      );
+
+      // Find or create the new category
+      let newCategory = categories.find(cat => cat.name.toLowerCase() === newCategoryName.toLowerCase());
+      
+      if (!newCategory) {
+        // Create new category
+        const colors = [
+          '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+          '#DDA0DD', '#98D8C8', '#FFB347', '#87CEEB', '#D8BFD8',
+          '#F0E68C', '#FFA07A', '#20B2AA', '#FF69B4', '#9370DB'
+        ];
+        
+        const existingColors = categories.map(cat => cat.color);
+        let selectedColor = colors[Math.floor(Math.random() * colors.length)];
+        let attempts = 0;
+        while (existingColors.includes(selectedColor) && attempts < 50) {
+          selectedColor = colors[Math.floor(Math.random() * colors.length)];
+          attempts++;
+        }
+
+        const { data: categoryData, error: categoryError } = await supabase
+          .from('categories')
+          .insert([{ 
+            name: newCategoryName, 
+            color: selectedColor
+          }])
+          .select();
+
+        if (categoryError) throw categoryError;
+        newCategory = categoryData[0];
+      }
+
+      if (!newCategory) {
+        throw new Error('Failed to create or find category');
+      }
+
+      // Update all expenses in this category to use the new category
+      const expenseIds = categoryExpenses.map(expense => expense.id);
+      
+      const { error: updateError } = await supabase
+        .from('large_expenses')
+        .update({ category_id: newCategory.id, user_id: editUserId })
+        .in('id', expenseIds);
+
+      if (updateError) throw updateError;
+
+      // Also update any existing auto-generated expenses from these large expenses
+      // to use the new category_id and user_id
+      for (const expense of categoryExpenses) {
+        await supabase
+          .from('expenses')
+          .update({ category_id: newCategory.id, user_id: editUserId })
+          .eq('user_id', expense.user_id)
+          .eq('amount', expense.monthly_amount)
+          .eq('note', expense.note + ' (Monthly portion)');
+      }
+
+      // Update local state
+      const updatedExpenses = largeExpenses.map(expense => {
+        if (expenseIds.includes(expense.id)) {
+          return { ...expense, category_id: newCategory!.id, user_id: editUserId };
+        }
+        return expense;
+      });
+
+      setLargeExpenses(updatedExpenses);
+      
+      // Update categories list if we created a new one
+      if (!categories.find(cat => cat.id === newCategory!.id)) {
+        setCategories([...categories, newCategory!]);
+      }
+
+      setEditingCategory(null);
+      setEditCategoryName('');
+      setNewCategoryNameInput('');
+      
+      alert(`Successfully updated category from "${oldCategoryName}" to "${newCategoryName}"`);
+    } catch (error) {
+      console.error('Error updating category:', error);
+      alert('Failed to update category. Please try again.');
+    }
+  };
+
   const handleCancel = () => {
     setShowAddForm(false);
     setEditingExpense(null);
+    setEditingCategory(null);
+    setEditCategoryName('');
+    setNewCategoryNameInput('');
+    setEditUserId('');
     setNewCategoryName('');
     setSelectedCategoryName('');
     setTotalAmount('');
@@ -333,7 +530,6 @@ const LargeExpensesScreen: React.FC<LargeExpensesScreenProps> = ({ userId, curre
                   value={selectedCategoryName}
                   onChange={(e) => setSelectedCategoryName(e.target.value)}
                   required
-                  disabled={!!editingExpense}
                 >
                   <option value="">Select or create category...</option>
                   {categories.map((cat) => (
@@ -353,9 +549,6 @@ const LargeExpensesScreen: React.FC<LargeExpensesScreenProps> = ({ userId, curre
                   />
                 )}
               </div>
-              {editingExpense && (
-                <small>Category: {getCategoryName(largeExpenses.find(e => e.id === editingExpense)?.category_id || '')}</small>
-              )}
             </div>
 
             <div className="form-group">
@@ -443,15 +636,81 @@ const LargeExpensesScreen: React.FC<LargeExpensesScreenProps> = ({ userId, curre
                 return (
                   <div key={categoryName} className="category-group">
                     <div className="category-header">
-                      <div 
-                        className="category-indicator"
-                        style={{ backgroundColor: categoryColor }}
-                      >
-                        {categoryName}
-                      </div>
-                      <div className="category-total">
-                        Total: ${totalAmount.toFixed(2)} | Monthly: ${Math.ceil(monthlyAmount)}
-                      </div>
+                      {editingCategory === categoryName ? (
+                        <div className="category-edit-form">
+                          <select
+                            value={editCategoryName}
+                            onChange={(e) => setEditCategoryName(e.target.value)}
+                            className="category-edit-select"
+                          >
+                            <option value="">Select or create category...</option>
+                            {categories.map((cat) => (
+                              <option key={cat.id} value={cat.name}>
+                                {cat.name} (existing)
+                              </option>
+                            ))}
+                            <option value="__new__">+ Create new category</option>
+                          </select>
+                          
+                          {editCategoryName === "__new__" && (
+                            <input
+                              type="text"
+                              value={newCategoryNameInput}
+                              onChange={(e) => setNewCategoryNameInput(e.target.value)}
+                              className="category-edit-input"
+                              placeholder="New category name"
+                              autoFocus
+                            />
+                          )}
+                          
+                          <select
+                            value={editUserId}
+                            onChange={(e) => setEditUserId(e.target.value)}
+                            className="category-edit-select"
+                          >
+                            <option value="">Select user...</option>
+                            {users.map((user) => (
+                              <option key={user.id} value={user.id}>
+                                {user.name}
+                              </option>
+                            ))}
+                          </select>
+                          
+                          <div className="category-edit-actions">
+                            <button 
+                              onClick={() => handleSaveCategoryEdit(categoryName)}
+                              className="save-category-btn"
+                            >
+                              Save
+                            </button>
+                            <button 
+                              onClick={handleCancelCategoryEdit}
+                              className="cancel-category-btn"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div 
+                            className="category-indicator"
+                            style={{ backgroundColor: categoryColor }}
+                          >
+                            {categoryName}
+                          </div>
+                          <div className="category-total">
+                            Total: ${totalAmount.toFixed(2)} | Monthly: ${Math.ceil(monthlyAmount)}
+                          </div>
+                          <button 
+                            className="edit-category-btn"
+                            onClick={() => handleEditCategory(categoryName)}
+                            title="Edit category name"
+                          >
+                            <Edit3 size={16} />
+                          </button>
+                        </>
+                      )}
                     </div>
                     
                     <div className="expenses-grid">

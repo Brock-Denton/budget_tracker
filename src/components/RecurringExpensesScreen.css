@@ -201,6 +201,88 @@
   color: #3B82F6;
 }
 
+.edit-category-btn {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: color 0.2s ease, background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.5rem;
+}
+
+.edit-category-btn:hover {
+  color: #3b82f6;
+  background-color: #333;
+}
+
+.category-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.category-edit-select,
+.category-edit-input {
+  padding: 0.5rem;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background-color: #1a1a1a;
+  color: white;
+  font-size: 0.9rem;
+}
+
+.category-edit-select:focus,
+.category-edit-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.category-edit-select option {
+  background-color: #1a1a1a;
+  color: white;
+}
+
+.category-edit-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.save-category-btn,
+.cancel-category-btn {
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.save-category-btn {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.save-category-btn:hover {
+  background-color: #2563eb;
+}
+
+.cancel-category-btn {
+  background-color: #444;
+  color: white;
+}
+
+.cancel-category-btn:hover {
+  background-color: #555;
+}
+
 .expenses-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
