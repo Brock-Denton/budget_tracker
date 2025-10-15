@@ -116,20 +116,31 @@ const CategoriesScreen: React.FC<CategoriesScreenProps> = ({ userId, currentUser
   };
 
   const handleDeleteCategory = async (categoryId: string) => {
-    if (!window.confirm('Are you sure you want to delete this category? This will also delete all associated expenses.')) {
-      return;
-    }
-
     setDeletingCategory(categoryId);
 
     try {
-      // Delete expenses first (due to foreign key constraint)
-      const { error: expensesError } = await supabase
+      // Check if there are any expenses using this category (single source of truth)
+      const { data: expenses } = await supabase
         .from('expenses')
-        .delete()
+        .select('id')
         .eq('category_id', categoryId);
 
-      if (expensesError) throw expensesError;
+      const hasExpenses = expenses && expenses.length > 0;
+
+      if (!window.confirm(`Are you sure you want to delete this category?${hasExpenses ? ' This will also delete all associated expenses.' : ''}`)) {
+        setDeletingCategory(null);
+        return;
+      }
+
+      // Delete expenses first (due to foreign key constraint)
+      if (hasExpenses) {
+        const { error: expensesError } = await supabase
+          .from('expenses')
+          .delete()
+          .eq('category_id', categoryId);
+
+        if (expensesError) throw expensesError;
+      }
 
       // Delete the category
       const { error: categoryError } = await supabase

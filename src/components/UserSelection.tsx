@@ -187,32 +187,38 @@ const UserSelection: React.FC = () => {
 
   const handleDeleteCategory = async (categoryId: string) => {
     const category = categories.find(cat => cat.id === categoryId);
-    const isSpecialCategory = category?.is_recurring_only || category?.is_large_expense_only;
     
-    if (isSpecialCategory) {
-      // If it's a special category that's linked, just unlink it instead of deleting
-      if (category?.is_linked_to_normal) {
-        await unlinkCategoryFromNormalExpenses(categoryId);
-      } else {
-        alert('Cannot delete categories that are used for Recurring or Large expenses. Please delete them from their respective sections.');
-      }
-      return;
-    }
-
-    if (!window.confirm('Are you sure you want to delete this category? This will also delete all associated expenses.')) {
+    // If it's a linked category, just unlink it instead of deleting
+    if (category?.is_linked_to_normal) {
+      await unlinkCategoryFromNormalExpenses(categoryId);
       return;
     }
 
     setDeletingCategory(categoryId);
 
     try {
-      // Delete expenses first (due to foreign key constraint)
-      const { error: expensesError } = await supabase
+      // Check if there are any expenses using this category (single source of truth)
+      const { data: expenses } = await supabase
         .from('expenses')
-        .delete()
+        .select('id')
         .eq('category_id', categoryId);
 
-      if (expensesError) throw expensesError;
+      const hasExpenses = expenses && expenses.length > 0;
+
+      if (!window.confirm(`Are you sure you want to delete this category?${hasExpenses ? ' This will also delete all associated expenses.' : ''}`)) {
+        setDeletingCategory(null);
+        return;
+      }
+
+      // Delete expenses first (due to foreign key constraint)
+      if (hasExpenses) {
+        const { error: expensesError } = await supabase
+          .from('expenses')
+          .delete()
+          .eq('category_id', categoryId);
+
+        if (expensesError) throw expensesError;
+      }
 
       // Delete the category
       const { error: categoryError } = await supabase

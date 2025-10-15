@@ -488,29 +488,27 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
   };
 
   const handleDeleteCategory = async (categoryId: string, categoryName: string) => {
-    if (!window.confirm(`Are you sure you want to delete the category "${categoryName}"? This action cannot be undone.`)) {
-      return;
-    }
     try {
-      // First check if there are any recurring or large expenses using this category
-      const { data: recurringExpenses } = await supabase
-        .from('recurring_expenses')
-        .select('id')
-        .eq('category_id', categoryId);
-      
-      const { data: largeExpenses } = await supabase
-        .from('large_expenses')
+      // Check if there are any expenses using this category (single source of truth)
+      const { data: categoryExpenses } = await supabase
+        .from('expenses')
         .select('id')
         .eq('category_id', categoryId);
 
-      if (recurringExpenses && recurringExpenses.length > 0) {
-        alert('Cannot delete category: It is still being used by recurring expenses. Please update or delete those expenses first.');
+      const hasExpenses = categoryExpenses && categoryExpenses.length > 0;
+
+      if (!window.confirm(`Are you sure you want to delete the category "${categoryName}"?${hasExpenses ? ' This will also delete all associated expenses.' : ''}`)) {
         return;
       }
 
-      if (largeExpenses && largeExpenses.length > 0) {
-        alert('Cannot delete category: It is still being used by large expenses. Please update or delete those expenses first.');
-        return;
+      // Delete expenses first (due to foreign key constraint)
+      if (hasExpenses) {
+        const { error: expensesError } = await supabase
+          .from('expenses')
+          .delete()
+          .eq('category_id', categoryId);
+
+        if (expensesError) throw expensesError;
       }
 
       // Delete the category
