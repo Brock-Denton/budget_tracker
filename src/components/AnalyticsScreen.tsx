@@ -165,8 +165,17 @@ const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({ userId, currentUser }
       const totalExpenses = monthlyData.reduce((sum, month) => sum + month.expenses, 0);
       const totalNetIncome = totalIncome - totalExpenses;
       
-      // Only include months with logged expenses in average calculations
-      const monthsWithExpenses = monthlyData.filter(month => month.expenses > 0);
+      // Only include months with logged expenses AND that have passed (not current month)
+      const now = new Date();
+      const currentMonthNum = now.getMonth();
+      const currentYearNum = now.getFullYear();
+      
+      const monthsWithExpenses = monthlyData.filter(month => {
+        const monthHasExpenses = month.expenses > 0;
+        const monthHasPassed = month.year < currentYearNum || 
+          (month.year === currentYearNum && month.monthNumber < currentMonthNum);
+        return monthHasExpenses && monthHasPassed;
+      });
       const monthsWithExpensesCount = monthsWithExpenses.length;
       
       const averageMonthlyIncome = monthsWithExpensesCount > 0 ? 
