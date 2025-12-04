@@ -14,7 +14,10 @@ body {
 }
 
 .App {
-  min-height: 100vh;
+  height: 100dvh;
+  width: 100vw;
+  overflow: hidden;
+  position: relative;
   background-color: #1a1a1a;
 }
 

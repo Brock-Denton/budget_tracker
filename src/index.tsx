@@ -4,6 +4,21 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
+// Fix for iOS Safari viewport height issues
+const updateViewportHeight = () => {
+  const vh = window.innerHeight * 0.01;
+  document.documentElement.style.setProperty('--vh', `${vh}px`);
+};
+
+// Set on load
+updateViewportHeight();
+
+// Update on resize
+window.addEventListener('resize', updateViewportHeight);
+window.addEventListener('orientationchange', () => {
+  setTimeout(updateViewportHeight, 500);
+});
+
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );

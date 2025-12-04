@@ -1,15 +1,20 @@
 .main-app {
-  min-height: 100vh;
+  height: 100dvh;
+  width: 100vw;
+  overflow: hidden;
+  position: relative;
   background-color: #1a1a1a;
   color: white;
   display: flex;
   flex-direction: column;
+  isolation: isolate;
 }
 
 .app-header {
   padding: 1rem 1.5rem;
   background-color: #2a2a2a;
   border-bottom: 1px solid #333;
+  flex-shrink: 0;
 }
 
 .user-welcome {
@@ -20,9 +25,15 @@
 
 .app-content {
   flex: 1;
-  padding: 1rem;
   overflow-y: auto;
-  padding-bottom: 140px; /* Extra space for larger bottom navigation */
+  overflow-x: hidden;
+  padding: 1rem;
+  padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+  -webkit-overflow-scrolling: touch;
+}
+
+.bottom-spacer {
+  height: 0;
 }
 
 .loading, .error {
@@ -49,7 +60,11 @@
   
   .app-content {
     padding: 0.75rem;
-    padding-bottom: 160px; /* Extra space for larger mobile bottom navigation */
+    padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .bottom-spacer {
+    height: 0;
   }
 }
 

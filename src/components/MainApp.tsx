@@ -171,17 +171,20 @@ const MainApp: React.FC = () => {
   };
 
   return (
-    <div className="main-app">
-      <header className="app-header">
-        <h1 className="user-welcome">Welcome, {lastSelectedUser?.name || currentUser.name}</h1>
-      </header>
-      
-      <main className="app-content">
-        {renderActiveScreen()}
-      </main>
+    <>
+      <div className="main-app">
+        <header className="app-header">
+          <h1 className="user-welcome">Welcome, {lastSelectedUser?.name || currentUser.name}</h1>
+        </header>
+        
+        <main className="app-content">
+          {renderActiveScreen()}
+          <div className="bottom-spacer" />
+        </main>
+      </div>
       
       <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
-    </div>
+    </>
   );
 };
 
