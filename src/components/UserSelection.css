@@ -1,12 +1,16 @@
 .user-selection {
-  min-height: 100vh;
+  height: 100dvh;
+  width: 100vw;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
   background-color: #1a1a1a;
   color: white;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 2rem 2rem 6rem 2rem; /* Extra bottom padding for navigation */
+  padding: 2rem 2rem calc(120px + env(safe-area-inset-bottom, 0px)) 2rem;
 }
 
 .app-title {
@@ -367,7 +371,7 @@
   }
   
   .user-selection {
-    padding: 1rem 1rem 6rem 1rem;
+    padding: 1rem 1rem calc(120px + env(safe-area-inset-bottom, 0px)) 1rem;
   }
 }
 
