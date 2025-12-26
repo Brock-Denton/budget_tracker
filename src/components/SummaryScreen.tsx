@@ -764,7 +764,7 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
                           );
                         })}
                         
-                        <h4>Recent Transactions</h4>
+                        <h4>All Transactions</h4>
                         <div className="transactions-list">
                           {(() => {
                             // Get regular expenses for this category
@@ -772,7 +772,6 @@ const SummaryScreen: React.FC<SummaryScreenProps> = ({ userId, currentUser }) =>
                             
                             return categoryExpenses
                               .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                              .slice(0, 10)
                               .map((expense) => {
                               const user = users.find(u => u.id === expense.user_id);
                               return (
