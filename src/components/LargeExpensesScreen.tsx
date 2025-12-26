@@ -76,7 +76,34 @@ const LargeExpensesScreen: React.FC<LargeExpensesScreenProps> = ({ userId, curre
     }
   }, []);
 
+  const deleteOldLargeExpenses = async () => {
+    try {
+      const thirteenMonthsAgo = new Date();
+      thirteenMonthsAgo.setMonth(thirteenMonthsAgo.getMonth() - 13);
+
+      const { data: oldExpenses, error: fetchError } = await supabase
+        .from('large_expenses')
+        .select('id')
+        .lt('created_at', thirteenMonthsAgo.toISOString());
+
+      if (fetchError) throw fetchError;
+
+      if (oldExpenses && oldExpenses.length > 0) {
+        const oldExpenseIds = oldExpenses.map(expense => expense.id);
+        const { error: deleteError } = await supabase
+          .from('large_expenses')
+          .delete()
+          .in('id', oldExpenseIds);
+
+        if (deleteError) throw deleteError;
+      }
+    } catch (error) {
+      console.error('Error deleting old large expenses:', error);
+    }
+  };
+
   useEffect(() => {
+    deleteOldLargeExpenses();
     fetchData();
   }, [fetchData]);
 

@@ -25,6 +25,7 @@ const MainApp: React.FC = () => {
       fetchUser(userId);
       generateRecurringExpenses(); // Generate recurring expenses when app loads
       generateRecurringIncome(); // Generate recurring income when app loads
+      deleteOldLargeExpenses(); // Delete large expenses older than 13 months
       
       // Load last selected user from localStorage
       loadLastSelectedUser();
@@ -102,6 +103,37 @@ const MainApp: React.FC = () => {
       }
     } catch (error) {
       console.error('Error calling generate_recurring_income function:', error);
+    }
+  };
+
+  const deleteOldLargeExpenses = async () => {
+    try {
+      // Calculate 13 months ago from now
+      const thirteenMonthsAgo = new Date();
+      thirteenMonthsAgo.setMonth(thirteenMonthsAgo.getMonth() - 13);
+
+      // Find and delete large expenses older than 13 months
+      const { data: oldExpenses, error: fetchError } = await supabase
+        .from('large_expenses')
+        .select('id')
+        .lt('created_at', thirteenMonthsAgo.toISOString());
+
+      if (fetchError) throw fetchError;
+
+      if (oldExpenses && oldExpenses.length > 0) {
+        const oldExpenseIds = oldExpenses.map(expense => expense.id);
+        const { error: deleteError } = await supabase
+          .from('large_expenses')
+          .delete()
+          .in('id', oldExpenseIds);
+
+        if (deleteError) throw deleteError;
+        
+        console.log(`Deleted ${oldExpenses.length} large expense(s) older than 13 months`);
+      }
+    } catch (error) {
+      console.error('Error deleting old large expenses:', error);
+      // Don't show alert - this is a background operation
     }
   };
 
