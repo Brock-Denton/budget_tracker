@@ -108,15 +108,15 @@ const MainApp: React.FC = () => {
 
   const deleteOldLargeExpenses = async () => {
     try {
-      // Calculate 13 months ago from now
-      const thirteenMonthsAgo = new Date();
-      thirteenMonthsAgo.setMonth(thirteenMonthsAgo.getMonth() - 13);
+      // Calculate 12 months ago from now
+      const twelveMonthsAgo = new Date();
+      twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
-      // Find and delete large expenses older than 13 months
+      // Find and delete large expenses older than 12 months
       const { data: oldExpenses, error: fetchError } = await supabase
         .from('large_expenses')
         .select('id')
-        .lt('created_at', thirteenMonthsAgo.toISOString());
+        .lt('created_at', twelveMonthsAgo.toISOString());
 
       if (fetchError) throw fetchError;
 
@@ -129,7 +129,7 @@ const MainApp: React.FC = () => {
 
         if (deleteError) throw deleteError;
         
-        console.log(`Deleted ${oldExpenses.length} large expense(s) older than 13 months`);
+        console.log(`Deleted ${oldExpenses.length} large expense(s) older than 12 months`);
       }
     } catch (error) {
       console.error('Error deleting old large expenses:', error);

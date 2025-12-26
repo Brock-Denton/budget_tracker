@@ -78,13 +78,13 @@ const LargeExpensesScreen: React.FC<LargeExpensesScreenProps> = ({ userId, curre
 
   const deleteOldLargeExpenses = async () => {
     try {
-      const thirteenMonthsAgo = new Date();
-      thirteenMonthsAgo.setMonth(thirteenMonthsAgo.getMonth() - 13);
+      const twelveMonthsAgo = new Date();
+      twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
       const { data: oldExpenses, error: fetchError } = await supabase
         .from('large_expenses')
         .select('id')
-        .lt('created_at', thirteenMonthsAgo.toISOString());
+        .lt('created_at', twelveMonthsAgo.toISOString());
 
       if (fetchError) throw fetchError;
 
